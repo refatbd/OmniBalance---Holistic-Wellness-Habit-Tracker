@@ -1,0 +1,87 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # -----------------------------------------------------------------------
+    # 1. Force HTTPS (uncomment when SSL certificate is active on your hosting)
+    # -----------------------------------------------------------------------
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # -----------------------------------------------------------------------
+    # 2. Allow access to frontend build assets (CSS/JS)
+    # -----------------------------------------------------------------------
+    RewriteCond %{REQUEST_URI} ^/build/.*
+    RewriteRule ^ - [L]
+
+    RewriteCond %{REQUEST_URI} ^/assets/.*
+    RewriteRule ^ - [L]
+
+    # -----------------------------------------------------------------------
+    # 3. Block all sensitive files and directories
+    #    Covers: env files, composer files, package files, build configs,
+    #    artisan CLI, storage, bootstrap cache, source directories
+    # -----------------------------------------------------------------------
+
+    # Block dot-files (.env, .env.example, .gitignore, .htaccess backup, etc.)
+    RewriteRule ^\.(?!well-known) - [F,L,NC]
+
+    # Block PHP/config source files that must never be served directly
+    RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|postcss\.config\.js|vite\.config\.js|artisan|sw\.js\.map) - [F,L,NC]
+
+    # Block source directories
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$) - [F,L,NC]
+
+    # -----------------------------------------------------------------------
+    # 4. Handle Authorization Header (needed for API / Bearer tokens)
+    # -----------------------------------------------------------------------
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # -----------------------------------------------------------------------
+    # 5. Redirect Trailing Slashes
+    # -----------------------------------------------------------------------
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # -----------------------------------------------------------------------
+    # 6. Route all other requests to Laravel's front controller
+    # -----------------------------------------------------------------------
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# -----------------------------------------------------------------------
+# Security: Add headers for browsers that process .htaccess headers
+# (these complement the SecurityHeaders middleware)
+# -----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Prevent caching of sensitive pages
+    <FilesMatch "\.(php)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# -----------------------------------------------------------------------
+# Deny direct PHP execution everywhere except index.php
+# -----------------------------------------------------------------------
+<FilesMatch "^(?!index).*\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>

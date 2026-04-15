@@ -15,12 +15,14 @@ class InstallerController extends Controller
     // Step 1: Show welcome and check server requirements
     public function index()
     {
+        // By the time this runs, index.php has already ensured .env exists and APP_KEY is set.
+        // Nothing to do here except display the requirements check.
         $requirements = [
             'php'          => version_compare(PHP_VERSION, '8.1.0', '>='),
             'pdo'          => extension_loaded('pdo'),
             'mbstring'     => extension_loaded('mbstring'),
             'openssl'      => extension_loaded('openssl'),
-            'env_writable' => File::isWritable(base_path('.env')) || File::isWritable(base_path('.env.example')),
+            'env_writable' => File::isWritable(base_path('.env')),
         ];
 
         return view('installer.index', compact('requirements'));
@@ -113,10 +115,8 @@ class InstallerController extends Controller
                 'timezone' => $request->timezone,
             ]);
 
-            // Auto-generate APP_KEY if not already set
-            if (empty(config('app.key'))) {
-                Artisan::call('key:generate', ['--force' => true]);
-            }
+            // Always generate a fresh APP_KEY during installation so no pre-generated key is ever shipped with the zip
+            Artisan::call('key:generate', ['--force' => true]);
 
             // Auto-generate a secure CRON_SECRET token so the admin never has to do it manually
             $existingCronSecret = env('CRON_SECRET', '');

@@ -47,18 +47,16 @@ Before uploading to your hosting, you need to generate the base framework, apply
    `composer update`
    `composer install --optimize-autoloader --no-dev`
 
-4. **Prepare the Environment & App Key (CRITICAL):**
-   To ensure zero commands are needed on the server, you must generate the `.env` file and application key locally BEFORE zipping:
-   * `cp .env.example .env` (Or copy/paste the file manually and rename it to `.env`)
-   * `php artisan key:generate` (This adds the necessary APP_KEY to your `.env` file)
-
-5. **Generate Push Notification VAPID Keys (CRITICAL FOR PUSH):**
-   You must generate the security keys required for Web Push Notifications so they are included in your `.env` file before uploading to your server:
+4. **Generate Push Notification VAPID Keys (CRITICAL FOR PUSH):**
+   Generate the VAPID keys for Web Push Notifications locally, then copy them into `.env.example` so they ship with the zip.
+   * `cp .env.example .env`
    * Publish the migration: `php artisan vendor:publish --provider="NotificationChannels\WebPush\WebPushServiceProvider" --tag="migrations"`
    * Generate the keys: `php artisan webpush:vapid`
-   *(This will automatically add `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` to your `.env` file).*
+   *(This adds `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` to your local `.env`.)*
+   * **Copy those two key values into `.env.example`** so they are included in the zip.
+   * **Do NOT include `.env` in the zip** — `APP_KEY` and database credentials are generated fresh by the Web Installer for each client installation.
 
-6. **Install Node Modules & Build Assets (Optional but Recommended):**
+5. **Install Node Modules & Build Assets (Optional but Recommended):**
    `npm install`
    `npm run build`
 
@@ -68,11 +66,13 @@ Before uploading to your hosting, you need to generate the base framework, apply
 
 You must compress the files into a `.zip` archive to upload to your shared hosting. 
 
-**CRITICAL:** Make sure you include **hidden files** (files starting with a dot, especially `.env` and `.htaccess`) when zipping.
+**CRITICAL:** Include **hidden files** (files starting with a dot, especially `.env.example` and `.htaccess`) when zipping. **Do NOT include `.env`** — it contains your personal app key and must never be shipped to clients.
 
-* **Windows:** Select all files/folders inside the project directory, right-click -> Compress to ZIP file. Make sure hidden items are visible in file explorer so `.env` is included in the zip.
+* **Windows:** Select all files/folders inside the project directory, right-click -> Compress to ZIP file. Make sure hidden items are visible. Confirm `.env.example` and `.htaccess` are included, but `.env` is excluded.
 * **Mac/Linux:** Open terminal in the project folder and run:
-  `zip -r omnibalance.zip . -x "*.git*" -x "node_modules/*"`
+  `zip -r omnibalance.zip . -x "*.git*" -x "node_modules/*" -x ".env"`
+
+> **Security note:** The Web Installer generates a fresh `APP_KEY` automatically for each installation. No sensitive credentials from your development machine are ever shipped to clients.
 
 ---
 
@@ -82,7 +82,7 @@ You must compress the files into a `.zip` archive to upload to your shared hosti
 2. Go to the **File Manager** and navigate to the exact root directory of your subdomain (e.g., `track.yourdomain.com`).
 3. **Upload** the `omnibalance.zip` file.
 4. **Extract** the zip file directly into this root directory.
-5. **Verify Hidden Files:** Ensure that `.htaccess`, `.env`, and `index.php` are sitting directly in the root folder, alongside folders like `app`, `bootstrap`, `vendor`, etc.
+5. **Verify Hidden Files:** Ensure that `.htaccess`, `.env.example`, and `index.php` are sitting directly in the root folder, alongside folders like `app`, `bootstrap`, `vendor`, etc. There is no `.env` file yet — the Web Installer will create it automatically from `.env.example`.
 
 ---
 
